@@ -73,7 +73,7 @@ const CONFIG = {
         musicUrl: "https://res.cloudinary.com/dq5jpncva/video/upload/v1771027412/Christina_Perri_-_A_Thousand_Years_PianoCello_Cover_soblyl.mp3", // Music streaming URL
         startText: "🎵 Play Music",        // Button text to start music
         stopText: "🔇 Stop Music",         // Button text to stop music
-        volume: 0.5                        // Volume level (0.0 to 1.0)
+        volume: 0.8                        // Volume level (0.0 to 1.0)
     }
 };
 
