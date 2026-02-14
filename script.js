@@ -206,6 +206,7 @@ function setupMusicPlayer() {
     const musicToggle = document.getElementById('musicToggle');
     const bgMusic = document.getElementById('bgMusic');
     const musicSource = document.getElementById('musicSource');
+    let pendingAutoplay = config.music.autoplay;
 
     // Only show controls if music is enabled in config
     if (!config.music.enabled) {
@@ -217,16 +218,43 @@ function setupMusicPlayer() {
     musicSource.src = config.music.musicUrl;
     bgMusic.volume = config.music.volume || 0.5;
     bgMusic.load();
+    bgMusic.autoplay = !!config.music.autoplay;
 
-    // Try autoplay if enabled
-    if (config.music.autoplay) {
+    // Set initial button label assuming autoplay succeeds
+    musicToggle.textContent = config.music.autoplay ? config.music.stopText : config.music.startText;
+
+    // Helper to attempt playback; browsers may block until user gesture
+    const attemptPlay = (reason) => {
         const playPromise = bgMusic.play();
         if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.log("Autoplay prevented by browser");
-                musicToggle.textContent = config.music.startText;
-            });
+            playPromise
+                .then(() => {
+                    pendingAutoplay = false;
+                    musicToggle.textContent = config.music.stopText;
+                    // Remove gesture listeners once we've started
+                    document.removeEventListener('click', gestureHandler);
+                    document.removeEventListener('touchstart', gestureHandler);
+                    document.removeEventListener('keydown', gestureHandler);
+                })
+                .catch(() => {
+                    console.log(`Autoplay blocked (${reason}); waiting for first gesture.`);
+                    musicToggle.textContent = config.music.startText;
+                });
         }
+    };
+
+    const gestureHandler = () => {
+        if (pendingAutoplay) {
+            attemptPlay('gesture');
+        }
+    };
+
+    // Try autoplay immediately; fall back to first user gesture
+    if (config.music.autoplay) {
+        attemptPlay('initial');
+        document.addEventListener('click', gestureHandler, { once: true });
+        document.addEventListener('touchstart', gestureHandler, { once: true });
+        document.addEventListener('keydown', gestureHandler, { once: true });
     }
 
     // Toggle music on button click
